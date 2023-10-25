@@ -1,0 +1,99 @@
+---
+title: "Assignment1"
+author: "Harlee Scordo"
+date: "2023-10-18"
+output: html_document
+---
+
+## Exercise 1:
+
+```{r}
+
+favorite_movie <- "Star_Wars"
+
+x <- 6
+
+v <- c(2, 4, 6)
+
+v * 3
+
+y <- 7
+
+z<- x * y
+
+```
+
+## Exercise 2:
+
+*It says [1] 9 underneath the code and in the console, but not in the environment.*
+
+```{r}
+
+6+3
+
+```
+## Exercise 3:
+
+*The answer appears in the environment now.*
+
+*When I add a, it adds the text down at the bottom again.*
+
+```{r}
+
+m <- 6
+
+n <- 3
+
+a <- m + n
+
+a
+```
+## Exercise 4:
+
+*It calculates 81. It took the previous value of 9 and adapted it here. *
+
+```{r}
+a ^2
+
+
+```
+
+## Exercise 5:
+
+*It takes the a, x and y values (the orgional ones) and adds them altogether.* 
+
+```{r}
+sum (a, x, y)
+
+```
+
+## Exercise 6:
+
+*This got rid of everything standing in the environment pane. *
+
+
+## Exercise 7:
+
+*It repopulated everything that was there before. It seems to keep it in alphabetical order. *
+
+## Exercise 8:
+
+*This added the total to the bottom. It also added 2 to each value for v.* 
+
+```{r}
+
+v +2
+
+```
+
+
+## Exercise 9:
+
+*It states chr instead of num. *
+
+```{r}
+
+music <- c("bluegrass", "funk", "folk")
+
+```
+
