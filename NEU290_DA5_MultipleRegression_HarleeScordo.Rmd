@@ -1,0 +1,167 @@
+---
+title: "NEU290 Data Assignment 5: Multiple Regression"
+author: "Harle Scordo"
+output: html_document
+date: "2023-04-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Multiple Linear Regression
+To complete this assignment, fill in code or text for each of the 10 exercise as instructed. There are two analyses that you will conduct with two different data sets. In both cases, you will visualize patterns in data, fit linear models, and make predictions based on the models.
+
+## Load required libraries to start
+```{r}
+library(dplyr)
+library(ggplot2)
+library(moderndive)
+```
+
+# Analysis I: Epilepsy and HC Size
+As described in the last data assignment, epilepsy has been found to be associated with progressive decrease in the volume of hippocampi across time. This effect seems to differ for the *ipsilateral* hippocampus and the *contralateral* hippocampus. The ipsilateral hippocampus is on the same side of the brain as the source of epileptic seizures while the contralateral hippocampus is on the opposite side of the brain. For this first analysis, you are going to use both simple regression and multiple regression to create linear models that you could use to predict the volume of the ipsilateral hippocampus of someone who has had epilepsy for 7 years.
+
+This time you will use a data set that has the following variables:
+
+* Years -- the time (in estimated years) since the onset of epilepsy symptoms for a participant
+* Volume -- the measured volume of a hippocampus in cubic centimeters
+* Side -- the side of the brain that the particular hippocampus was in
+
+## Get the data!
+```{r}
+id <- "18cyJica4FLH9BMEreH2hJQMDnaderVoP"
+epi_dat <-  read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Check out the data!
+```{r}
+glimpse(epi_dat)
+```
+
+## Start with a Simple Model
+The graph below visualizes a linear model that helps us understand how hippocampus volume depends on how long people have had epilepsy. Let's start by trying to predict hippocampus volume with a simple model like this.
+
+```{r}
+epi_dat %>% ggplot(aes(x = Years, y = Volume)) + 
+  geom_point() +
+  geom_smooth(method = 'lm', se = 0)
+```
+
+## Exercise 1: Fit a model with simple linear regression
+Find the coefficients that would have been used to create the line in the graph above. Use simple linear regression to fit a model that would let you predict the volume of a hippocampus for people who have had epilepsy for any numbers of year. Remember, in this instance you want to use *simple* regression.
+```{r}
+simple_model <- lm(Volume ~ Years, data = epi_dat)
+simple_model %>%
+  get_regression_table()
+```
+
+## Exercise 2: Make a prediction
+Look at the model coefficients you fit above. Make your best guess at the volume of the ipsilateral hippocampus for someone who has had epilepsy for 7 years, *based on the coefficients of this model*.
+
+```{r}
+Simple_BestGuess_ipsi7 <- predict(simple_model, newdata = data.frame(Years = 7))
+Simple_BestGuess_ipsi7
+```
+
+## Create a model that incorporates all of our variables
+Let's build a model that would let us make more specific predictions -- ones based on both years with epilepsy and that is specific to the ipsilateral or contralateral hippocampi.
+
+Here is a graph that visualizes our data with lines drawn using a linear model created with multiple linear regression. Have a look at this graph and decide if it would be more appropriate to use a parallel slopes model or an interaction model.
+```{r}
+epi_dat %>% ggplot(aes(x = Years, y = Volume, color = Side)) + 
+  geom_point() +
+  geom_smooth(method = 'lm', se = 0)
+```
+
+## Exercise 3: Fit a model with multiple linear regression
+Use multiple linear regression to fit a model that would let you predict the volume of either the left or the right hippocampus for people who have had epilepsy for any numbers of year. Make sure to properly set up either an interaction or parallel slopes model as appropriate.
+```{r}
+multiple_model <- lm(Volume ~ Years * Side, data = epi_dat)
+multiple_model %>%
+  get_regression_table()
+```
+
+## Exercise 4: Make a prediction
+Look at the model coefficients you fit above. Use those to make your best guess at the volume of the ipsilateral hippocampus for someone who has had epilepsy for 7 years.
+
+```{r}
+new_data <- data.frame(Years = 7, Side = "ipsilateral")
+
+new_data$Side <- factor(new_data$Side, levels = levels(epi_dat$Side))
+
+Multiple_BestGuess_ipsi7 <- predict(multiple_model, newdata = new_data)
+Multiple_BestGuess_ipsi7
+```
+
+
+# Analysis II: Cognitive Tasks and Balance
+For this second analysis, you will look at data from a (fictional) experiment that tried to understand if our ability to balance while standing can be interfered with by cognitive tasks like solving math problems. Are the cognitive and physical tasks independent of interact with each other?
+
+In this experiment, participants were asked to balance in place on a small pedestal. The pedestal had a pressure sensor that could be used to measure how much the person moved around while balancing. The person's "center of pressure" (basically, the point directly under their body) moves around as they balance and make small corrective movements. For the purpose of this analysis, if the center of pressure is moving around fast then the person is having a harder time balancing. If the center of pressuring is moving around slowly, the person is having an easier time balancing. Center of pressure speed (*CP_Speed*) is the dependent variable in this study.
+
+In the study, participant either had to simply balance in place for 5 minutes or they had to complete a number of simple math problems while balancing. This is the *task*. 
+
+Even looking beyond possible cognitive interference, balance relies on many factors. Some of these are as simple as weight. Heavier people and lighter people move around to differing amounts while balancing because of the physics of how they move. Because of this, the weight of participants was also recorded.
+
+Here, we want to build a linear model that would help us understand the impact on balance based on task *beyond* what you would expect balance to be like based on somebody's weight.
+
+## Load the Balance Data
+```{r}
+id <- "16dJ5xZC0JGgxMlrhiOf28bDVSMzgpF4O"
+balance_dat <-  read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Check the Data Out
+```{r}
+glimpse(balance_dat)
+```
+
+## Exercise 5: Visualize the Data and Linear Model
+Create a single visualization of our data that would let us understand how CP_Speed (our measure of balance) depends on *both* the task and the weight of participants. In this figure, visualize a linear model that would let us understand this pattern
+```{r}
+balance_dat %>%
+  ggplot(aes(x = weight_kg, y = CP_Speed, color = task)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "CP_Speed vs. Weight by Task",
+       x = "Weight",
+       y = "CP_Speed",
+       color = "Task")
+```
+
+## Exercise 6: Fit a model with multiple linear regression
+Use multiple linear regression to fit a model that would let you understand the impact of the task on CP_Speed (beyond the effect of participants' weights). Make sure to properly set up either an interaction or parallel slopes model as appropriate. If a more complex model would not add to our understanding, then we should use the simpler model.
+```{r}
+balance_model <- lm(CP_Speed ~ task * weight_kg, data = balance_dat)
+balance_model %>%
+  get_regression_table()
+```
+
+## Exercise 7: Interpret the Model
+Complete the following statement by filling in the ... and choosing the options:
+
+"Performing math problems while balancing (increased/decreased) center of pressure speed by 0.087 beyond what you would expect for someone who does not perform math problems."
+
+## Exercise 8: Interpret the Model
+Complete the following statement by choosing the options:
+
+"The effect of math problem-solving on balance did depend on the weight of an individual in this data set. I considered this in completing my model by choosing a interaction model."
+
+
+## Exercise 9: Make a prediction
+Look at the model coefficients you fit above. Use those to make your best guess at the CP_Speed score for someone who weighs 70 kg and has to complete math problems while balancing.
+```{r}
+BestGuess_70Math <- predict(balance_model, newdata = data.frame(task = "Balance+Math", weight_kg = 70))
+BestGuess_70Math
+```
+
+## Exercise 10: Make a prediction
+Look at the model coefficients you fit above. Use those to make your best guess at the CP_Speed score for someone who weighs 80 kg and does not have to complete math problems while balancing.
+```{r}
+BestGuess_80NoMath <- predict(balance_model, newdata = data.frame(task = "Balance", weight_kg = 80))
+BestGuess_80NoMath
+```
+
+# That's all!
+Knit this markdown file to an .html file and submit on Canvas!

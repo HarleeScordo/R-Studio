@@ -1,0 +1,346 @@
+---
+title: "NEU290 Data Assignment 7: Hypothesis Testing_Harlee Scordo"
+output: html_document
+date: "2023-04-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+In this data assignment, you set up, run, and interpret hypothesis tests using permutation testing. Complete each exercise from top to bottom. In the first half of the assignment, you will follow along with and interpret one hypothesis test that is largely set up for you. In the second half, you will set up, run, and interpret several hypothesis tests for different research questions.
+
+### Load the required libraries!
+```{r}
+#install.packages("moderndive")
+#install.packages("infer")
+library(ggplot2)
+library(dplyr)
+library(moderndive)
+library(infer)
+```
+
+# Hypothesis Testing Step-by-Step
+In this first section, the data that you will look at come from a (real) research study that was intended to test the effectiveness as chloroquine as a potential treatment for glioblastoma (the most common type of brain cancer). This is the same study you looked at in the confidence interval assignment! In this study, researchers grew gliobastoma cells in cultures and administered either chloroquine or a control solution to the cultures. After doing so, the researchers waited 4 days and counted the glioblastoma cells remaining in each culture. In the last analysis, you estimated the effect of the chloroquine (what is our guess for how much does it prevent glioblastoma cells from developing). In this analysis, you will decide if their is sufficient evidence in the data set to say that there *is* chloroquine reduces the amount of glioblastoma cells in cultures relative to a control -- regardless of what exactly the effect is. In other words, you're not looking at how many glioblastoma cells we think chloroquine prevents, you're just deciding if there is evidence to show that chloroquine *does* prevent glioblastoma development to *any degree*. You'll use a permutation test to evaluate this.
+
+
+### Get the Data
+```{r}
+Google_id <- '1hmw3SEDyvTSs6lnsQS7sD3PvGT_F4aT4'
+glio <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download",
+                         Google_id),
+                 stringsAsFactors = TRUE)
+```
+
+### Check out the data
+Check out the variables:
+```{r}
+glimpse(glio)
+```
+Have a look at the data. This plot shows the distribution of cell counts in both conditions:
+```{r}
+glio %>%
+  ggplot(aes(x = Cell_Count)) +
+  geom_histogram() +
+  facet_wrap(~Condition) +
+  labs(title = "Distribution of Cell_Counts by Treatment")
+
+```
+
+These distributions of data look really different! It really looks like chloroquine cultures have less cells than the control cultures. But we should use a hypothesis test to formally test this idea.
+
+### Calculate the observed statistic
+The first step to figure out what is going on is the find out the difference in means between the control and chloroquine conditions in our data. In the context of hypothesis testing, this value is called the *observed statistic*. Our statistic here is the "difference in means". Note that this is *identical* to the *point estimate* you used in the previous assignment! In estimation, you use the value seen in the data as your best guess for the real world value of something. In hypothesis testing, this same value is one part of your hypothesis test.
+
+```{r}
+obs_diff_mean_cellcount <- glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control"))
+obs_diff_mean_cellcount
+```
+
+### Run a hypothesis test
+Now, you'll need to run a hypothesis test. A major part of this is to create a *null distribution*. The code below uses permutation to create a null distribution that would let us test the idea that chloroquine-treated cultures have less glioblastoma cells than control cultures. Note: This might take a moment to run.
+```{r}
+null_distribution <- glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control"))
+
+```
+
+Now, check out a visualization of the null distribution.
+```{r}
+null_distribution %>%
+  visualize()
+```
+
+### Exercise 1 (.5 pts): Interpret the Null Distribution
+The graph above shows a *null distribution* that can be used for the hypothesis test. In the null distribution, there is something like 170 values that fall in the column that is centered on 0 (though the exact value will change each time you run it). What do each of these "values" *represent*? Choose the correct answer by deleting the incorrect ones.
+
+
+**B: Each value in this graph represents the results from one imaginary research study from a world where cholorquine does not have an effect.**
+
+
+
+Now, when you conduct the hypothesis test, you will always need to create a null distribution, but you might not necessarily look at it directly. You want to use the null distribution to calculate a p-value. The code below is one attempt to doing that.
+```{r}
+glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control")) %>%
+  get_p_value(obs_stat = obs_diff_mean_cellcount, direction = "right")
+
+```
+When interpreting p-values, a p-value less than .05 (including 0) means that the null hypothesis (the default idea that there *isn't* an effect) is really unlikely. To show that we have an effect, we "want" to have small values. The p-value shown above is 1.0. That means that the data observed is *completely* consistent with the idea that there is no effect. Is you get a p-value of 1.0, then it is way above .05, and that means that you don't have evidence for any effect. But wait... in our visualization above, it *really* looked like chloroquine reduced the number of cells in the cultures. as it turns out the code above is *wrong*. It is conducting a hypothesis test to see if we have evidence to show that chloroquine *increases* the amount of cells in cultures. But we are interested in testing the idea that chloroquine would *reduce* the number of cells!
+
+### Exercise 2 (.5 pts): Fix the permutation test
+You need to change *one* part of the code below to run a permuation test that actually tests the idea that chloroquine *reduces* the cell count in cultures relative to control. Make that change to the code below!
+
+```{r}
+glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control")) %>%
+  get_p_value(obs_stat = obs_diff_mean_cellcount, direction = "left")
+
+```
+If you correctly fixed the code, then the results should a p-value of .00 (or close to it).
+
+### Exercise 3 (1 pts): Interpretting hypothesis tests
+Hypothesis tests will only ever tell you if there is evidence for an effect (in other words, if there is a "significant effect") or if there is not evidence for an effect (there is "no significant effect"). However, hypothesis tests cannot tell you that there *is no effect*. In around one sentence, give your interpretation of why hypothesis tests cannot ever tell you this:
+
+**Answer: Write your 1-2 sentences in here**
+
+Hypothesis tests are supposed to asses the evidence against a null. So if it is predicting against the null, it cannot predict a complete null. 
+
+# Mini Analyses
+In the second half of this assignment, you will conduct several short analyses. Each analysis will require you to conduct a single hypothesis test. You will need to correctly set up the variables and statistic to be used, and make sure to choose the correct direction of the hypothesis test (left-sided, right-sided, or both-sided).
+
+## Analysis 1: Infant Face Perception
+In this analysis, you will look at data from an infant looking-time study. In this study, researchers were interested in testing if 1-month old babies can already recognize important visual properties of human faces. This question has been of interest to understand the degree to which face perception is a congenital and unlearned ability -- something that babies can do from birth without having had to specifically learn it. To look at this quesiton, researchers showed babies images of either illustrated human faces, or of illustrated heads with human face features flipped upside down. The amount of time each infant looked at the image before looking away was measured. If there is **any** significant difference in how long infants look at one kind of image than the other, then this is evidence that  infants "know something" about the differences between these kinds of images. Run a hypothesis test to see if there is significant evidence for infants looking at either kind of image longer than the other!
+
+### Get the data
+```{r}
+id <- "1l5s88I2qaa60BunqB7vZA9Zl31zS8s97"
+face_df <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+### Check out the data
+Check out the variables in the data.
+```{r}
+glimpse(face_df)
+```
+
+Visualize the data,
+```{r}
+face_df %>% 
+  ggplot(aes(x = Condition, y = LookingTime)) +
+  geom_boxplot() +
+  geom_point() 
+```
+
+### Exercise 4 (1 pt): Describe the Pattern in the *data*
+To understand what pattern is in the data itself, use infer tools to calculate the *difference in means*. Specifically, look at how much longer the mean looking time was for the upright condition than for the inverted condition. Write in your code below and make sure to remove the comment marks (#).
+```{r}
+
+observed_diff_in_looking_means <- face_df %>%
+  specify(formula = LookingTime ~ Condition) %>%
+  calculate(stat = "diff in means", order = c("Upright", "Inverted"))
+
+observed_diff_in_looking_means
+
+```
+Note: The infants who were shown the upright face looked on average 7.9 seconds longer at the image than the infants who were shown the inverted face (that should be a positive number)!
+
+### Exercise  5 (.5 pts): Run the Permutation Test
+To decide if the data presents strong enough evidence to show a difference in looking time between the conditions, run a permutation test and check out the resulting p-value. Remember, in this case, you are looking for *any* difference in looking time between the groups (we don't specifically know if we expect babies to look longer at upright or inverted faces, but we want to test that they don't look equally at either). Hint: If your computer runs a little slow, then when you are testing out your code, you can use "reps = 10" to make sure the code works before switching it back to "reps = 1000" to run the final version.
+
+```{r}
+result <- face_df %>%
+  specify(formula = LookingTime ~ Condition) %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("Upright", "Inverted")) %>%
+  get_p_value(obs_stat = observed_diff_in_looking_means, direction = "both")
+
+result
+```
+
+### Exercise 6 (.5 pts): Interpret the Results
+Which of the following conclusions is consistent with your results? Select your choice by deleting the other options.
+
+
+**C: There is no significant evidence for differences in looking time between conditions.**
+
+
+## Analysis 2: Phantom Pain Treatment
+In this analysis, you will look at data from a (fictional) study of phantom limb pain. In this study, 30 participants were recruited from a VA clinic, each of whom has had a single arm amputated in the past and experiences "phantom pain" or the perception of pain from a limb that is not physically present. In this study, half of participants are in a "control" group which uses a combination of pharmaceutical and psychological therapy to manage pain. The other half of participants use a "mirror-tracing therapy" in addition to these standard pain management tools for 2 months. The mechanisms of mirror-tracing therapy are not fully understood, but the idea is that participants trace shapes on a piece of paper with their extant arm while looking through a mirror -- creating the illusion that they are writing with their "phantom" arm. This treatment may "reset" the brain's representation of the no longer present limb, leading to a reduction in phantom limb pain. In this study, after a period of 2-months, participants rate their chronic level of pain on a 0-10 scale (10 is most pain). Using the data provided here and a permutation test, test the claim that the therapy is effective in reducing pain. In other words, check that participants who completed the mirror-tracing therapy felt less pain on average than those who completed the control treatment.
+
+### Get the data
+```{r}
+id <- "1O1HerSlvbBDI324UgeaHH-UNAjT9eObG"
+pain_df <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+### Check out the data
+Have a look at the variables and values.
+```{r}
+glimpse(pain_df)
+```
+
+Visualize the data.
+```{r}
+pain_df %>% 
+  ggplot(aes(x = Condition, y = Pain)) +
+  geom_boxplot() +
+  geom_point(position = position_jitter(width = 0.1)) +
+  ylim(0,10)
+```
+
+### Exercise 7 (1 pt): Describe the Pattern in the *data*
+To  understand what pattern is in the data itself, use infer tools to calculate the *difference in mean pain* between the groups. Specifically, look at how much greater the pain was in the treatment condition compared to the control condition (negative means *less pain*).
+```{r}
+
+observed_diff_in_pain_means <- pain_df %>% 
+  specify(formula = Pain ~ Condition) %>%
+  calculate(stat = "diff in means", order = c("Treatment", "Control"))
+
+observed_diff_in_pain_means
+
+```
+Note: The mirror-therapy treated group should have an average pain score that is around 1 and one-third *lower* than that of the control group (the number should be negative)!
+
+### Exercise 8 (.5 pts): Run the Permutation Test
+To decide if the data presents strong enough evidence to show that the mirror-therapy treated group had pain *reduced more* than the control group, run a permutation test and check out the resulting p-value. Remember, in this case, you are looking specifically for a *greater reduction* in pain for the treatment group. Choose the direction of the test accordingly!. Hint: If your computer runs a little slow, then when you are testing out your code, you can use "reps = 10" to make sure the code works before switching it back to "reps = 1000" to run the final version.
+
+```{r}
+result <- pain_df %>%
+  specify(formula = Pain ~ Condition) %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("Treatment", "Control")) %>%
+  get_p_value(obs_stat = observed_diff_in_pain_means, direction = "greater")
+
+result
+
+```
+### Exercise 9 (.5 pts): Interpret the Results
+Which of the following conclusions is consistent with your results? Select your choice by deleting the other options.
+
+**B: There is no significant evidence that the treatment is effective at reducing pain.**
+
+# Analysis 3: The Dress
+In this analysis, you'll look at a fictionalized version of a data set that has been used to understand the visual illusion called "The Dress" that was popular on social media and the news in the mid 2010s (https://en.wikipedia.org/wiki/The_dress). The Dress is a photograph of a striped dress that interestingly is perceived by many people as being composed of white and gold stripes and by other people as being composed of blue and black stripes (with a few other color variations seen by a minority of viewers). One hypothesis for something which might lead people to perceive the dress one way or the other has to do with the degree to which the visual system of viewers "assumes" that the dress is in a shadow or in full light. The idea here is sort of that if you assume the dress is in a shadow, then you might see the stripes as lighter colors. If you think it is in the light, then you might see them as darker colors. In this analysis, you have a data set from 500 survey participants who reported the colors they saw in the dress and whether or not they think that the dress is in a shadow or not. Check if this data set presents statistically signficant evidence that would support the idea that people who think the dress is in a shadow are more likely to see the dress as white-gold than people who didn't think the dress is in a shadow.
+
+## Get the data
+```{r}
+id <- "16q2cEB8xH969eG_4LcoF4Lu-VoQsmSu0"
+dress_dat <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Check out the data
+Have a look at the variables and values.
+```{r}
+glimpse(dress_dat)
+```
+Visualize the data.
+```{r}
+dress_dat %>%
+  ggplot(aes(SawShadow, fill = ColorReported )) + 
+  geom_bar() +
+  labs(title = "Reported Color Split by Shadow Assumptions")
+```
+
+### Exercise 10 (1 pt): Describe the Pattern in the *data*
+To  understand what pattern is in the data itself, use infer tools to calculate the *difference in proportion white-gold reports* between the group of participants who thought the dress was in a shadow and those who thought it was not. Specifically, test the idea that the proportion of white-gold responses is *higher* for people who believe that the dress is in a shadow than for those who don't.
+```{r}
+obs_diff_prop <- dress_dat %>%
+  specify(formula = ColorReported ~ SawShadow, success = "White-Gold") %>%
+  calculate(stat = "diff in props", order = c("Yes", "No"))
+
+obs_diff_prop
+```
+Note: The "yes" group should have a proportion that is around 0.23 (23%) higher than that of the "no" group!
+
+### Exercise 11 (.5 pts): Run the Permutation Test
+To decide if the difference in perception between the two groups is statistically significant, run a permutation test and check out the resulting p-value. Remember, in this case, you specifically want to see if people who respond "yes" that they believe the dress was in a shadow report the color as "White-Gold" *more* than those who respond "no"!
+
+```{r}
+result <- dress_dat %>%
+  specify(formula = ColorReported ~ SawShadow, success = "White-Gold") %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in props", order = c("Yes", "No")) %>%
+  get_p_value(obs_stat = obs_diff_prop, direction = "greater")
+
+result
+```
+
+### Exercise 12 (.5 pts): Interpret the Results
+Which of the following conclusions is consistent with your results? Select your choice by deleting the other options.
+
+**A: There is significant evidence that people who think the dress is in the shade are also more likely to see it as white-gold.**
+
+
+## Analysis 4: Epilepsy and Hippocampus Size
+In this analysis, you will return again to a data set that describes the size of both hippocampi in people who have been diagnoses with epilepsy. Using this data set, see if there is significant evidence that the contralateral hippocampus (the hippocampus on the opposite side from where seizures start) is difference depending on how long people have had epilepsy. To do this, you will want to see if the *slope* that describes the relationship between contralateral hippocampus and years since epilepsy diagnosis is significantly different from 0.0.
+
+### Get Data
+```{r}
+id <- '1ShIrQhelCpHv43v7fpwMIWWU4Ql-tplK'
+epilepsy_dat <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+Note: In this data, Years tells you how many years since a participant was diagnosed with epilepsy and ContralateralHC relates the size of the hippocampus in cubic centimeters on the side of the brain where seizures originate.
+
+### Explore Data
+Check out the variable names:
+```{r}
+glimpse(epilepsy_dat)
+```
+
+Have a visual look at the data. In *the data*, this positive-sloped line is the best description of the relationship  between years and contralateral hippocampus. Can we infer that in the full, total population of people with epilepsy that we would any kind of trend with the line?
+```{r}
+epilepsy_dat %>%
+  ggplot(aes(x = Years, y = ContralateralHC)) + 
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE) +
+  labs(title = "Contralateral HC Volume based on Years since Epilepsy Diagnosis")
+```
+
+### Exercise 13 (1 pt): Describe the Pattern in the *data*
+To  understand what pattern is in the data itself, use infer tools (not lm) to calculate the *slope* shown in the graph above. Note that there is not "order" when you are looking at slope like this -- there are no groups to compare.
+```{r}
+obs_slope_chc_years <- epilepsy_dat %>%
+  specify(formula = ContralateralHC ~ Years) %>%
+  calculate(stat = "slope")
+
+obs_slope_chc_years
+```
+Note: The slope here should be positive but very small (around 0.0005 cubic centimeters larger for every extra year since diagnosis).
+
+### Exercise 14 (.5 pts): Run the Permutation Test
+Decide if we have evidence that there is any linear relationship between contralateral HC and Years in the full population by using a permutation test. In this case, test for *any* relationship (positive or negative), not just whether the contralateral HC is larger or smaller with more years.
+
+```{r}
+result <- epilepsy_dat %>%
+  specify(formula = ContralateralHC ~ Years) %>%
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "slope") %>%
+  get_p_value(obs_stat = obs_slope_chc_years, direction = "both")
+
+result
+```
+
+### Exercise 15 (.5 pts): Interpret the Results
+Which of the following conclusions is consistent with your results? Select your choice by deleting the other options.
+
+**B: Contralateral HC size does not significantly increase with years since epilepsy diagnosis.**
+
+# That's it for this data assignment!
+Knit this markdown file to html and turn that in!

@@ -1,0 +1,147 @@
+---
+title: "NEU 290 Data Assignment 4"
+author: "Harlee Scordo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+In this data assignment, you'll conduct a couple simple linear regression analysed and interpret the findings! Complete this assignment by filling in code or text for each exercise below!
+
+First, load required libraries:
+```{r}
+# install.packages("tidyverse")
+# install.packages("moderndive")
+library(tidyverse)
+library(moderndive)
+```
+
+# Temporal Lobe Epilepsy and Hippocampus Size
+For the first part of this assignment, you'll look at some data about epilepsy and the size of the hippocampi. In addition to the danger caused directly by seizures, many forms of epilepsy contribute to progressive atrophy of different parts of the brain. In epilepsy, seizures typically originate from a specific region of the brain with spreading activation from there. Does progressive atrophy -- the reduction of neural volume -- affect both sides of the brain equally? Or does it only affect the side where seizures originate?  Use linear models to think about these questions and to make predictions for the hippocampus size of individuals with epilepsy who have had epilepsy for different lengths of time.
+
+## Acquire Data
+```{r}
+id <- '1ShIrQhelCpHv43v7fpwMIWWU4Ql-tplK'
+epilepsy_dat <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Explore Data
+```{r}
+glimpse(epilepsy_dat )
+```
+The variables in this data frame represent the number of years since a participant was diagnosed with epilepsy (Years), the volume of the Ipsilateral Hippocampus, the HC on the side where seizures originate, in cubic centimeters (IpsilateralHC) and the volume of the Contralateral Hippocampus, the HC on the side opposite to where seizures begin (ContralateralHC).
+
+## Model Data
+Build two linear models: One that will tell us if the ipsilateral hippocampus got smaller as time progressed since diagnosis and another that will tell us if the contralateral hippocampus got smaller as well -- or stayed the same or got bigger.
+
+### Exercise 1: Visualize Ipsilateral HC size
+Create a visualization to informally inspect how much ipsilateral HC size depends on the number of years since epilepsy diagnosis. To make sure that you use the right kind of visualization, first decide what the predictor/explanatory variable is and whether it is numerical/quantitative or categorical/qualitative. If it is numerical, then create a scatterplot that also has a linear model displayed visually as part of the graph. If it is categorical, then use a boxplot.
+```{r}
+epilepsy_dat %>%
+  ggplot(aes(x = Years, y = IpsilateralHC)) +
+  geom_point()+                 
+  geom_smooth(method = "lm") +
+  labs(title = "Relationship between Years Since Epilepsy Diagnosis and Ipsilateral HC Size",
+       x = "Years Since Diagnosis",
+       y = "Ipsilateral HC Size")
+```
+
+### Exercise 2: Model Ipsilateral HC size
+Fit a linear model to look at how Ipsilateral HC depends on years since epilepsy diagnosis. Show a table with the coefficients for the model.
+
+```{r}
+IpsiModel <- lm(IpsilateralHC ~ Years, data = epilepsy_dat)
+get_regression_table(IpsiModel)
+```
+### Exercise 3: Make a prediction with the model
+Using the model coefficients above, calculate the best guess at the ipsilateral hippocampus size of someone who has been diagnosed with epilepsy for 65 years. Include the required math below.
+
+```{r}
+years_diagnosed <- 65
+best_guess_65 <- 2.396 + 0.008 * years_diagnosed
+best_guess_65
+
+```
+
+
+### Exercise 4: Visualize Contralateral HC size
+Create a visualization to informally inspect how much *contralateral* HC size depends on the number of years since epilepsy diagnosis.
+```{r}
+epilepsy_dat %>%
+  ggplot(aes(x = Years, y = ContralateralHC)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +  # Linear regression line
+  labs(title = "Contralateral HC Size vs. Years Since Epilepsy Diagnosis",
+       x = "Years Since Epilepsy Diagnosis",
+       y = "Contralateral HC Size")
+
+```
+
+### Exercise 5: Model Contralateral HC size
+Fit a linear model to look at how contralateral HC depends on years since epilepsy diagnosis. Show a table with the coefficients for the model.
+```{r}
+IpsiModel <- lm(ContralateralHC ~ Years, data = epilepsy_dat)
+get_regression_table(IpsiModel)
+```
+### Exercise 6: Make a prediction with the model
+Using the model coefficients above, calculate the best guess at the contralateral hippocampus size of someone who has been diagnosed with epilepsy for 22 and one half years. Include the required math below.
+
+```{r}
+
+years_diagnosed <- 22.5
+best_guess_65 <- 2.372 + 0.000 * years_diagnosed
+best_guess_65
+```
+
+
+# Temporal Rate Perception
+For this second section, you will look at data from an experiment designed to help understand the perception of *rate*: When we perceive things as happening fast or slow, are our perceptions warped by our recent experience with fast things or slow things? If you listen to musical rhythms that are really fast, are you more likely to interpret a new rhythm as faster because you are primed to interpret things as fast (we can call this the priming hypothesis)? Or, after listening to a fast rhythm will you perceive new rhythms as *slower* than they really are, because you've adapted to thinking that fast is normal (we can call this the adaptation hypothesis)? In this section, you'll use linear regression to try to answer these kinds of questions.
+
+## Acquire Data
+```{r}
+id <- '1xhJ8kFIcYGI9hHFT2k2s2UFHCvtXNXLN'
+timing_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Explore Data
+```{r}
+glimpse(timing_data)
+```
+This data includes responses from a single participant on 150 trials of an experiment. In each trial, the participant first listened to a rhythm that repeated every 333 ms (a "baseline" rhythm), or they listened to a rhythm that repeated every 666 ms (a "slow" rhythm), or they listened to a rhythm that repeated every 166.6 ms (a "fast" rhythm). After the participant was exposed to any of these rhythms for 20 repetitions, the participant was present a single repetition of a 333 ms rhythm. The participant was asked to repeat that 333 ms rhythm ten times by tapping their finger. The average rate (in ms) that the participant tapped the rhythm is recorded as ProducedRate. ExposureRate tells you if the participant listened to a baseline (333 ms), fast (166.6 ms), or slow (666 ms) rhythm. For this study, the ProducedRate is our way to measure the participants *perception* of the test 333 ms rhythm. If the participant taps faster than 333 ms (less than 333 ms) then the participant perceives the rhythm as faster than it really is; if the participant taps slower than 333 ms (more than 333 ms), then the participant perceives the rhythm slower than it really is. 
+
+## Model the data
+Now, use linear models to see if the data that we have is more consistent with the priming hypothesis (that fast exposure will lead to faster perception and slow exposure will lead to slower perception) or more consistent with the adaptation hypothesis (that fast exposure will lead to slower perception and that slow exposure will leader to faster perception). We will want to see how average RateProduced depends on RateExposure!
+
+### Exercise 7: Visualize Timing Data
+To start with, create a visualization to help us understand out data! Make sure that it is an appropriate visualization to compare RateProduced across levels of RateExposure.
+
+```{r}
+timing_data %>%
+  ggplot(aes(x = ExposureRate, y = ProducedRate)) +
+  geom_boxplot() +
+  labs(title = "Comparison of RateProduced Across RateExposure",
+       x = "Rate of Exposure",
+       y = "Rate Produced")
+```
+
+### Exercise 8: Model Timing Data
+Now, fit a linear model to help us understand how perception of rate might differ based on prior exposure to different rates. Show the coefficient values for this model.
+```{r}
+TimingModel <-lm(ProducedRate ~ ExposureRate, data = timing_data)
+get_regression_table(TimingModel)
+```
+
+### Exercise 9: Interpret Model
+Based on the model above, interpret the data!
+
+Choose the correct interpretation by deleting the statement below that is false:
+* The data is more consistent with the **adaptation** hypothesis were perception is -  *slower* after being exposed to fast rhythms.
+
+Replace the ...s below with the correct values:
+* The average (mean) rate produced by the participant in the fast condition is 355.594 + 41.331 = 396.925 ms.
+* The average (mean) rate produced by the participant in the baseline condition is 355.594 ms.
+
+# That's all for now!
+Knit this markdown file as an html and submit on Canvas!

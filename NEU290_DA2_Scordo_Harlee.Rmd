@@ -1,0 +1,200 @@
+---
+title: "NEU 290 Data Assignment 2: Visualizing Birth Data"
+author: "Harlee Scordo"
+output:
+  html_document: default
+---
+
+```{r, include=FALSE}
+# Do not edit this code block/chunk!
+knitr::opts_chunk$set(
+  echo = TRUE, message=FALSE, warning = FALSE, fig.width = 16/2, 
+  fig.height = 9/2
+)
+```
+
+# Visualization and Interpretation Exercises
+This document explores several questions about maternal and newborn health by visualizing data in the 2004 North Carolina births registry. Make sure to replace all questions with your answers and to fill in code in each code chunk with a ... in it.
+
+##Setup Libraries
+Set up the libraries required for visualizations.
+```{r}
+#If you get an error saying dplyr or ggplot2 have not been found, then you have not installed them yet! To install them, "uncomment" the next two lines by deleting the hash/pound symbol and try again!
+#install.packages("dyplr")
+#install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+## Load Data
+The following loads a dataset that was released in 2004 from the state of North Carolina and includes information about about the maternal and newborn health from 800 randomly chosen live births in that state.
+
+```{r}
+# Run this to load the data! It's OK if it doesn't make sense yet!
+id <- '19vUudLrACnxKpP-X0M_6wGdf2Suid1_a'
+births <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+## Explore the Data
+Have a look at the variables recorded in this dataset. Each row is one birth. 
+
+```{r}
+glimpse(births)
+```
+Most of the variables have transparent names, but some are a little less apparent:
+
+- fage - father's age at time of birth
+- mage - mother's age at time of birth
+- weeks - duration of pregnancy in weeks
+- visits - the number of prenatal care visits to a clinician that the mother attended during pregnancy
+- gained - the maximum amount of weight gained by the mother during pregnancy (in pounds)
+- weight - the weight of the newborn infant (in pounds)
+- gender - the gender identified on NC birth registry for the newborn infant
+
+## Exercise 0: Example
+This "Exercise" is an example to show how you could format exercises 1-5. Your exercises should look similar to this, with one or two code chunks, followed by your answer to the provided question (having deleted the original question text).
+```{r}
+births %>% 
+  ggplot(aes(x = weeks, y = visits)) + 
+  geom_point() +
+    labs(x = "Length of pregnancy (in weeks)",
+         y = "Number of Prenatal Visits",
+         title = "Length of Pregnancy and Prenatal Care")
+```         
+
+As seen in the above figure, there is perhaps a week relationship between length of pregnancy and number of visits to prenatal care appointments. Mother's with shorter pregnancies rarely attended that many visits, but this is not surprising as there was simply less time to attend or schedule such visits. Some mothers who had longer pregnancies also attended few or even zero appointments.
+
+## Exercise 1: Pregnancy Duration
+```{r}
+
+births %>% 
+  ggplot(aes(x = weeks, y = visits, color = premie)) + 
+  geom_point() +
+    labs(x = "Length of pregnancy (in weeks)",
+         title = "Pregnancy Duration")
+
+# What is a typical length of pregnancy in the North Carolina birth dataset? What is the earliest and latest ages that you would consider "typical" based on the graph and why? Replace this text with your answer (around 2 sentences)
+
+```
+
+I would consider anywhere from 35 to 43 weeks to be a typical length of pregnancy given the density in that range, even given the label of "premie" 41-42 seems to be the most births. . 
+The earliest is 20 and the latest is 45, but the earliest typical would be 35, latest 43. 
+
+
+
+## Exercise 2: Birthweight and Recorded Gender
+
+```{r}
+births %>% 
+  ggplot(aes(x = weight, y = gender)) + 
+  geom_point(alpha = 0.2) +
+    labs(x = "Birthweight",
+         y = "Gender",
+         title = "Birthweight and Recorded Gender")
+```
+
+
+```{r}
+births %>% 
+   ggplot(aes(x = weight, fill = lowbirthweight)) +
+    geom_histogram() +
+    facet_wrap(~ gender) +
+     labs (x = "Birthweight",
+           title = "Birthweight and Recorded Gender")
+
+#Does the typical birthweight for male newborns or female newborns seem higher in this dataset? Does the difference seem large or small? How can you tell from the graph (write 2-3 sentences)?
+
+```
+
+The typical birthweight of males seems to be higher than females. The females tend to be in the 5.5-7.5 ranger, whereas the density of male weight is in the 7-9 range.The difference is noticeable, but not outrageous. 
+
+
+## Exercise 3: Birthweight, Mother's Maturity, & Mother's Smoking Habit
+
+```{r}
+births %>% 
+  ggplot(aes(x = weight, y = mature)) + 
+  geom_point(alpha = 0.2) +
+    labs(x = "Birthweight",
+         y = "Mother's Maturity",
+         title = "Birthweight, Mother's Maturity, & Mother's Smoking Habit")
+```
+```{r}
+births %>% 
+  ggplot(aes(x = weight, y = habit)) + 
+  geom_point(alpha = 0.2) +
+    labs(x = "Birthweight",
+         y = "Mother's Smoking Habit",
+         title = "Birthweight, Mother's Maturity, & Mother's Smoking Habit")
+```
+
+
+```{r}
+
+births %>% 
+  ggplot(aes(x = weight)) + 
+  geom_histogram() +
+  facet_wrap(~ habit) +
+  labs (x = "Birthweight",
+        title = "Birthweight & Mother's Smoking Habit")
+
+
+#Smoking has been associated with lower birthweights. Additionally, studies have found that mature mother (older mothers) have newborns with lower birthweights than younger mothers. In the North Carolina births data, does it seem like smoking status or the maturity of the mother is a more reliable predictor of low birthweight? In other words, is the difference between birthweights greater between smokers and non-smokers or between younger and mature mothers? How can you tell from these two graphs? Replace this text with your answer (1-2 sentences)
+```
+```{r}
+births %>% 
+  ggplot(aes(x = weight)) + 
+  geom_histogram() +
+  facet_wrap(~ mature) +
+  labs (x = "Birthweight",
+        title = "Birthweight & Mother's Maturity")
+```
+
+
+I feel like the maturity is a better indicator of birthweight, just due to the volume of data collected. There doesn't seem to be a lot of data on smoker's versus non smokers. However, the small amount of data we do have does indicate a smaller bithweight average. However, age seems to keep a pretty consistent weight of above 6 pounds. 
+
+
+## Exercise 4: Birthweight and length of pregnancy
+```{r}
+
+births %>% 
+  ggplot(mapping = aes(x = weeks, y = weight, color = premie)) + 
+  geom_point() +
+    labs(x = "Weeks of pregnancy",
+         y = "Birthweight",
+         title = "Birthweight and Length of pregnancy")
+
+
+#In general, the longer a pregnancy, the longer we would higher we would expect the birthweight of a newborn. Does this rule of thumb apply for both full-term and premie pregnancies, or just one or the other? How can you tell? Replace this text with your answer (1-2 sentences).
+```
+
+It does seems like the longer the pregnancy, the higher the birthweight. That goes for both premie and full term. If you wee to draw a line between the data sets, it would consistently climb up. 
+
+
+## Exercise 5: Birthweight and length of pregnancy
+```{r}
+births %>% 
+  ggplot(aes(x = weight, y = weeks, color = premie)) + 
+  geom_point(alpha = 0.2) +
+    labs(x = "Birthweight",
+         y = "Length of prengancy",
+         title = "Birthweight and length of pregnancy")
+```
+
+```{r}
+
+births %>% 
+  ggplot(aes(x = premie, y = weight, color = lowbirthweight)) + 
+  geom_boxplot() +
+  geom_point() +
+    labs(x = "Premie or Full term",
+         y = "Birthweight",
+         title = "Birthweight and Full term vs Premie")
+
+#Approximately what proportion of full-term babies in NC were identified as having low birthweight? What about premie babies? As a proportion of the whole population of live births, would it be unusual to have a premie newborn that was born with a typical (not low) birth weight? Replace this text with your answers
+```
+
+A very small amount of babies were classified as having low birthweight when it comesto full-term babies. Whereas the majority of premie babies were classified as being of low birthweight. However, given the large amount of premie babies that were not classified as having low birthweight, it would not be outrageous to think of premie babies being born at a normal weight. 
+
+
+# That's it for this exercise!
+Make sure to save your .Rmd Markdown file (with File -> Save) and *also* knit your Markdown to an .html file (Click the Knit button). Once the file has been knit, scroll through to make sure everything looks right. Then, find the knit .html file on your computer by going to the folder that you saved the .Rmd file in (when you knit the Markdown, the window that comes up should have the folder name shown at the top of the window). Upload that .html file to Canvas as your submission!

@@ -1,0 +1,300 @@
+---
+title: "NEU290 Data Assignment 6: Confidence Intervals, Harlee Scordo"
+output: html_document
+date: "2023-04-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+In this data assignment, you will create and interpret 95% confidence intervals using bootstrapping and the percentile method. Complete each exercise from top to bottom. In the first half of the assignment, you will follow along with the creation of a confidence interval and interpret the steps. In the second half, you will calculate confidence intervals yourself and interpret the results. 
+
+### Load the required libraries!
+```{r}
+#install.packages("moderndive")
+#install.packages("infer")
+library(ggplot2)
+library(dplyr)
+library(moderndive)
+library(infer)
+```
+
+# Data Analysis 1: Confidence Intervals Step-by-Step
+The data that you will look at come from a (real) research study that was intended to test the effectiveness as chloroquine as a potential treatment for glioblastoma (the most common type of brain cancer). In this study, researchers grew gliobastoma cells in cultures and administered either chloroquine or a control solution to the cultures. After doing so, the researchers waited 4 days and counted the glioblastoma cells remaining in each culture. In this analysis, you will estimate the effect of the chloroquine. To do this, you will create a 95% confidence interval that describes the difference in mean cell counts between the chloroquine and control conditions.
+
+### Get the Data
+```{r}
+Google_id <- '1hmw3SEDyvTSs6lnsQS7sD3PvGT_F4aT4'
+glio <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download",
+                         Google_id),
+                 stringsAsFactors = TRUE)
+```
+
+### Check out the data
+Check out the variables:
+```{r}
+glimpse(glio)
+```
+Have a look at the data. This plot shows the distribution of cell counts in both conditions:
+```{r}
+glio %>%
+  ggplot(aes(x = Cell_Count)) +
+  geom_histogram() +
+  facet_wrap(~Condition) +
+  labs(title = "Distribution of Cell_Counts by Treatment")
+
+```
+
+### Calculate the point estimate
+The first step to figure out what is going on is the find out the difference in means between the control and chloroquine conditions in our data. You can use this number as an estimate for the difference in means that might be true for the full population -- it's our best guess.
+
+```{r}
+glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control"))
+```
+### Exercise 1 (.5 pts): Interpret the point estimate
+The point estimate was around -626. One of the following interpretations is *not* reasonable given this point estimate. Find the one that is *not* reasonable below and delete that line of text!
+
+
+**B: 626.22 is our best available guess for how much chloroquine would reduce the cell count of glioblastoma in the total real population of cells.**
+
+
+### Calculate a 95% confidence interval: Start with the generate() step
+You don't want to rely only on the point estimate when estimating things about the world. So, calculate a confidence interval! Here, the code will do this step by step. Here's a first step for calculating a confidence interval with bootstrapping:
+
+```{r}
+new_df <-glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  generate(reps = 1000, type = 'bootstrap')
+```
+The code above created a new data frame called *new_df*.
+
+```{r}
+glimpse(new_df)
+```
+### Exercise 2 (.5 pts): Interpret the generate step
+Check out the code below and the graph that is produced based on *new_df*.
+```{r}
+new_df %>%
+  filter(replicate == 1) %>%
+  ggplot(aes(x = Cell_Count)) +
+  geom_histogram() +  
+  facet_wrap(~Condition)
+```
+
+Which of the following describes what is shown in the graph above? Choose the correct option from below by deleting the incorrect answers.
+
+
+**D: The graph shows all of the estimated statistics for each of the simulated datasets produced using bootstrapping.**
+
+### The calculate() step
+Now moving onto the next step for the bootstrap confidence interval technique: The following code adds on the "calculate()" function. It creates another new data frame called *new_df2*
+
+```{r}
+new_df2 <-glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  generate(reps = 1000, type = 'bootstrap') %>%
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control"))
+
+```
+
+### Exercise 3 (.5): Interpret the calculate step
+Have a look at the following graph based on the values in *new_df2*.
+```{r}
+new_df2 %>%
+  ggplot(aes(x = stat)) +
+  geom_histogram() 
+```
+
+Which of the following describes what is shown in the graph above? Choose the correct option from below by deleting the incorrect answers.
+
+
+**B: The graph shows all of the data points in a single imaginary, simulated or "bootstrap" research study.**
+
+
+### Exercise 4 (.5): Getting the interval
+Now, add on the last computational step: finding the specific interval to use for the confidence interval.
+
+```{r}
+glio %>%
+  specify(formula = Cell_Count ~ Condition) %>%
+  generate(reps = 1000, type = 'bootstrap') %>%
+  calculate(stat = "diff in means", order = c("Chloroquine", "Control")) %>%
+  get_confidence_interval(level = 0.95, type = "percentile")
+```
+Based on the output above, what is a reasonable interpretation? Choose the correct option from below by deleting the incorrect answers.
+
+
+**C: We don't have a perfect estimate for the effect of chloroquine in the real world population, but it plausibly reduces the average cell count by some amount between 742 and 521 cells.**
+
+
+# Mini Analyses
+In the second half of this assignment, you will conduct several short analyses. Each analysis will require you to calculate a point estimate, a confidence interval, and interpret these numbers.
+
+## Data Analysis 2: Mean Birthweight in North Carolina
+In this analysis, you will estimate the average (mean) birthweight for live births in the state of North Carolina. You will do this using a data set that includes data from 800 randomly sampled live-births in the state of North Carolina.
+
+### Get the data
+```{r}
+id <- '1zqEY11bsP1iYjkPuiLkYNsRTBWfiEkiq'
+births <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+### Check out the data
+Have a look at the variables:
+```{r}
+glimpse(births)
+```
+Note that "weight" is the variable that indicates the birthweight of newborns! This is our variable of interest!
+
+Check out the distribution of birthweights:
+```{r}
+births %>%
+  ggplot(aes(x = weight)) +
+  geom_histogram(bins = 30) +
+  labs(title = "Birthweights in NC births")
+```
+
+
+### Exercise 5 (1 pt): Calculate a point estimate
+Calculate a point estimate for your estimate of the mean weight of newborns in North Carolina using the *infer* pipeline tools.
+```{r}
+point_estimate <- births %>%
+  specify(response = weight) %>%
+  calculate(stat = "mean")
+
+print(point_estimate)
+```
+
+### Exercise 6 (.5 pts): Calculate a 95% confidence interval
+Calculate a 95% confidence interval for your estimate of the mean weight of newborns in North Carolina.
+```{r}
+confidence_interval <- births %>%
+  specify(response = weight) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean") %>%
+  get_confidence_interval(type = "percentile", level = 0.95)
+
+print(confidence_interval)
+```
+
+### Exercise 7 (1 pt): Interpret the estimates
+The exact confidence interval you calculate will change each time you run the code above. However, you should be able to find 95% confidence intervals that are **around** [7.1  7.3]. Based just on that confidence interval, which of the following interpretations is reasonable? Select an option by deleting the unreasonable interpretations.
+
+
+**B: If someone conducted a census of all newborns in North Carolina, we would reasonably be surprised if they found that the average weight for newborns is 7.5 lbs.**
+
+
+## Data Analysis 3: Handedness and Pawedness
+For this analysis you will look at data from a (fictional) study of limb preference in a domestic species. The question for this study is whether the limb that dogs prefer to use for reaching tasks is influenced by the handedness of their owners. Are dogs more likely to be right-pawed if their owner is right-handed? 
+
+### Get the data
+```{r}
+id <- "122UO31kYhtqaaHE8aCPRNlDaUAyQHIQw"
+pawedness_dat <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+### Check out the data
+Have a look at the variables:
+```{r}
+glimpse(pawedness_dat)
+```
+Visualize the pattern that you are going to try and make inferences about:
+```{r}
+pawedness_dat %>%
+  ggplot(aes(Owner, fill = Dog)) + 
+  geom_bar() +
+  labs("Dog Pawedness based on Owner Handedness")
+```
+
+
+### Exercise 8 (1 pt): Calculate a point estimate
+Create a point estimate for your estimate of how much higher the proportion of right-pawedness is for dogs with right-handed owners than for dogs with left-handed owners. Use the *infer* pipeline tools to do this.
+```{r}
+point_estimate <- pawedness_dat %>%
+  specify(response = Dog, explanatory = Owner, success = "Right-Pawed") %>%
+  calculate(stat = "diff in props")
+
+print(point_estimate)
+```
+
+### Exercise 9 (.5 pts): Calculate a 95% confidence interval
+Create a 95% confidence interval for your estimate of how much higher the proportion of right-pawedness is for dogs with right-handed owners than for dogs with left-handed owners.
+```{r}
+confidence_interval <- pawedness_dat %>%
+  specify(response = Dog, explanatory = Owner, success = "Right-Pawed") %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "diff in props") %>%
+  get_confidence_interval(type = "percentile", level = 0.95)
+
+print(confidence_interval)
+```
+
+### Exercise 10 (1 pt): Interpret the estimates
+The exact confidence interval you calculate will change each time you run the code above. However, you should be able to find 95% confidence intervals that are **around** [-0.03  0.30]. Based on that confidence interval, which of the following interpretations is reasonable? Select an option by deleting the unreasonable interpretations.
+
+
+**B: We don't know the exact difference in right-pawedness between dogs with owners who are right-handed vs left-handed, but we can confident that dogs with right-handed owners are right-pawed more often than dogs with left-handed owners.**
+
+
+## Data Analysis 4: Slope for age and HC size
+In this analysis, you will return to a data set that describes the size of both hippocampi in people who have been diagnoses with epilepsy. Using this dataset, try to estimate *how much the size of the ipsilateral hippocampus (the side where seizures start) seems to get smaller as participants have had epilepsy for longer periods of time* for the full population of people with epilepsy. In other words, have a look at the *slope* that can be used to understand how ipsilateral HC depends on years since diagnosis.
+
+### Acquire Data
+```{r}
+id <- '1ShIrQhelCpHv43v7fpwMIWWU4Ql-tplK'
+epilepsy_dat <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+Note: In this data, Years tells you how many years since a participant was diagnoses with epilepsy and IpsilateralHC relates the size of the hippocampus in cubic centimeters on the side of the brain where seizures originate.
+
+### Explore Data
+Check out the variable names:
+```{r}
+glimpse(epilepsy_dat )
+```
+
+Have a visual look at the data. You want to get estimates for the slope of *this line* as it is in the full population of people with epilepsy.
+```{r}
+epilepsy_dat %>%
+  ggplot(aes(x = Years, y = IpsilateralHC)) + 
+  geom_point() +
+  geom_smooth(method = 'lm', se = FALSE) +
+  labs(title = "Ipsilateral HC Volume based on Years since Epilepsy Diagnosis")
+```
+
+
+### Exercise 11 (1 pt): Calculate the point estimate
+Create a point estimate for your estimate of the slope that describes how ipsilateral hippocampus size depends on years since diagnosis! Use the *infer* pipeline tools to do this (in other words, do not use lm() ).
+
+```{r}
+point_estimate <- epilepsy_dat %>%
+  specify(response = IpsilateralHC, explanatory = Years) %>%
+  calculate(stat = "slope")
+
+# Print the point estimate
+print(point_estimate)
+```
+
+### Exercise 12 (.5 pt): Calculate a 95% confidence interval
+Create a 95% confidence interval for your estimate of the slope that describes how ipsilateral hippocampus size depends on years since diagnosis!
+```{r}
+confidence_interval <- epilepsy_dat %>%
+  specify(response = IpsilateralHC, explanatory = Years) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "slope") %>%
+  get_confidence_interval(type = "percentile", level = 0.95)
+
+print(confidence_interval)
+```
+
+### Exercise 13 (1 pt): Interpret the estimates
+Let's imagine that the confidence interval you calculated above was [-0.0104 -0.0065], which is close to what you should have got. With this confidence interval, which of the following interpretations are reasonable? Select an option by deleting the incorrect interpretations.
+
+**A: In all our plausible guesses for the slope, the ipsilateral hippocampus is typically smaller for people who have been diagnosed with epilepsy for longer.**
+
+
+# That's all!
+Knit this markdown file to an html file, check the html file to ensure that things look in order, and submit on Canvas!
