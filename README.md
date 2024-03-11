@@ -125,6 +125,8 @@ NSDUH_Regions %>%
        x = "Region",
        y = "Average Alcohol Rate")
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/2a77c831-291f-45ae-afd8-f4e141dfcc99)
+
 # Additional Questions
 Excellent! Based on the graph above, you should be able to figure out which regions had the highest and lowest rates of alcohol consumption (at least in 2018)! The document from the top until this point is basically what you would expect to see in a real data analysis. For the next 3 exercises, you're going to answer a couple extra questions that are less directly tied to the original question.
 
@@ -238,6 +240,8 @@ births %>%
          y = "Number of Prenatal Visits",
          title = "Length of Pregnancy and Prenatal Care")
 ```         
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/3ee1dd13-fd36-4f5b-8a77-2d9dd932cc08)
+
 
 As seen in the above figure, there is perhaps a week relationship between length of pregnancy and number of visits to prenatal care appointments. Mother's with shorter pregnancies rarely attended that many visits, but this is not surprising as there was simply less time to attend or schedule such visits. Some mothers who had longer pregnancies also attended few or even zero appointments.
 
@@ -253,6 +257,8 @@ births %>%
 # What is a typical length of pregnancy in the North Carolina birth dataset? What is the earliest and latest ages that you would consider "typical" based on the graph and why? Replace this text with your answer (around 2 sentences)
 
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/2bfd733e-4dd6-4604-9893-6e7a07ff556e)
+
 
 I would consider anywhere from 35 to 43 weeks to be a typical length of pregnancy given the density in that range, even given the label of "premie" 41-42 seems to be the most births. . 
 The earliest is 20 and the latest is 45, but the earliest typical would be 35, latest 43. 
@@ -282,6 +288,8 @@ births %>%
 #Does the typical birthweight for male newborns or female newborns seem higher in this dataset? Does the difference seem large or small? How can you tell from the graph (write 2-3 sentences)?
 
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/1532295e-7d43-4fd0-9661-cc2cc2df7606)
+
 
 The typical birthweight of males seems to be higher than females. The females tend to be in the 5.5-7.5 ranger, whereas the density of male weight is in the 7-9 range.The difference is noticeable, but not outrageous. 
 
@@ -304,6 +312,7 @@ births %>%
          y = "Mother's Smoking Habit",
          title = "Birthweight, Mother's Maturity, & Mother's Smoking Habit")
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/76d4a480-36fd-45e7-9354-1924129f446f)
 
 
 ```{r}
@@ -318,6 +327,9 @@ births %>%
 
 #Smoking has been associated with lower birthweights. Additionally, studies have found that mature mother (older mothers) have newborns with lower birthweights than younger mothers. In the North Carolina births data, does it seem like smoking status or the maturity of the mother is a more reliable predictor of low birthweight? In other words, is the difference between birthweights greater between smokers and non-smokers or between younger and mature mothers? How can you tell from these two graphs? Replace this text with your answer (1-2 sentences)
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/ae7f7a4e-912a-4089-beee-0d89444ff1a2)
+
+
 ```{r}
 births %>% 
   ggplot(aes(x = weight)) + 
@@ -329,6 +341,8 @@ births %>%
 
 
 I feel like the maturity is a better indicator of birthweight, just due to the volume of data collected. There doesn't seem to be a lot of data on smoker's versus non smokers. However, the small amount of data we do have does indicate a smaller bithweight average. However, age seems to keep a pretty consistent weight of above 6 pounds. 
+
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/c2da9c6d-8210-4a93-84b4-2e5a2dd1b24f)
 
 
 ## Exercise 4: Birthweight and length of pregnancy
@@ -344,6 +358,10 @@ births %>%
 
 #In general, the longer a pregnancy, the longer we would higher we would expect the birthweight of a newborn. Does this rule of thumb apply for both full-term and premie pregnancies, or just one or the other? How can you tell? Replace this text with your answer (1-2 sentences).
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/792f27ae-f7e4-4f9e-9376-67938d91d906)
+
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/028617b0-a113-407c-871d-d061eca03114)
+
 
 It does seems like the longer the pregnancy, the higher the birthweight. That goes for both premie and full term. If you wee to draw a line between the data sets, it would consistently climb up. 
 
@@ -357,6 +375,7 @@ births %>%
          y = "Length of prengancy",
          title = "Birthweight and length of pregnancy")
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/ab6d3976-9414-4d6e-982a-c40d858d0113)
 
 ```{r}
 
@@ -370,6 +389,8 @@ births %>%
 
 #Approximately what proportion of full-term babies in NC were identified as having low birthweight? What about premie babies? As a proportion of the whole population of live births, would it be unusual to have a premie newborn that was born with a typical (not low) birth weight? Replace this text with your answers
 ```
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/4ecf0df9-0b71-41d6-bf57-10a98f0ba69e)
 
 A very small amount of babies were classified as having low birthweight when it comesto full-term babies. Whereas the majority of premie babies were classified as being of low birthweight. However, given the large amount of premie babies that were not classified as having low birthweight, it would not be outrageous to think of premie babies being born at a normal weight. 
 
+![image](https://github.com/HarleeScordo/R-Studio/assets/113852333/104454a7-3ee0-4372-b5f5-808a8a555ce8)
