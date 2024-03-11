@@ -1,0 +1,175 @@
+---
+title: "Data Assignment #3: Data Wrangling"
+author: "Harlee Scordo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Background and Instructions
+**Goal**: In this data analysis report, you will estimate which region in the United States had the highest rate of people (over age 12) who consume alcohol in 2018. You will also answer a couple extra questions using the same dataset. To do this, you will go through all the steps of data analysis from data analysis, cleaning, preprocessing, modeling/description, and creating a graph to communicate your findings. Each step builds on previous steps. **However**, if you get stuck on a step, you are not completely at a loss! At multiple points in this document, you can choose to load a correct version of what your data frame should look like. If you are stuck on an earlier section, then you can choose to load the new, correct data frame and go from that point. To complete this assignment, simply work through the rest of this document and fill in code or text as requested when you see an Exercise by filling in the ...s in the code chunks. Not text answers are required on this assignments.
+
+# Alcohol Use Data Analysis
+
+## Setup Libraries
+Set up the libraries required for visualizations.
+```{r}
+#If you get an error saying dplyr or ggplot2 have not been found, then you have not installed them yet! To install them, "uncomment" the next two lines by deleting the hash/pound symbol and try again! Warnings are OK!
+#install.packages("dyplr")
+#install.packages("ggplot2")
+library(dplyr)
+library(ggplot2)
+```
+
+## Data acquisition
+This code gets both of the necessary datasets (it required Internet access!).
+```{r}
+id <- '11UTI52VxABvWDqqdLB0axJfm9_vQuDUm'
+NSDUH <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+id <- '1PUpU17nBGw7-qfkqVH5O5zrcHB0x9vfp'
+CDC_Geographic <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+### Exercise 1 Combine data
+The NSDUH data frame contains information about drug use across US States and DC. The CDC_Geography data frame contains a guide to the geographic "divisions" that the CDC uses to categorize different US states and territories.
+
+```{r}
+NSDUH <- merge(NSDUH, CDC_Geographic, by = "State")
+
+```
+
+## Data Exploration
+Have a look at the data!
+```{r}
+glimpse(NSDUH)
+```
+
+```{r, include=FALSE}
+## Data Checkpoint 1
+# If you would like to make sure you have the correct version of the dataframe from this point forward, then delete the # on the next two lines and run this code chunk.
+id <- '14aWcteTT2SwqYM2OjCEvd6_5fLAR_uVq'
+NSDUH <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Data Cleaning
+### Exercise 2: Look only at 2018
+For this analysis, we only want data from the year 2018. The following code should use a data wrangling tool to make sure NSDUH only has 2018 data.
+```{r}
+NSDUH <- NSDUH %>% 
+  filter (Year == "2018")
+
+glimpse(NSDUH)
+```
+
+## Preprocessing
+We ultimately want to look at the *overall* rate of alcohol consumption in states and regions. Our dataset only includes rates for specific age ranges. We'll need to do some math and transformations to find the overall rate! This'll take a couple preprocessing steps to create a variable called AlcoholRate.
+
+### Exercise 3: Calculate Total Population
+Create a new variable in NSDUH called "PopTotal" that includes the total population in each state, *combining* or adding together the 12-17 year-olds, the 18-25 year-olds, and the 26+ year-olds.
+```{r}
+NSDUH <- NSDUH %>%
+  mutate(PopTotal = `Pop12_17` + `Pop18_25` + `Pop26Plus`)
+
+glimpse(NSDUH)
+```
+
+### Exercise 4: Calculate Total Alcohol Users
+Add a new variable to NSDUH called "AlcoholTotal". This should include an estimate for the *total* number of people over the age of 12 (from all three age groups) that consumed alcohol last month. The data wrangling function may look similar to Exercise 3, but with different math. As a hint, to calculate an estimate for the number of 12-17 year-olds that drink alcohol, you can multiply the total number of 12-17 year-olds by the rate of alcohol use for 12-17 year olds. Some numbers might include decimals -- it doesn't really make sense to have .5 or .3 people, but for these estimates it's OK that the number of people isn't always whole numbers! They're imperfect estimates!
+```{r}
+NSDUH <- NSDUH %>%
+  mutate(AlcoholTotal = (`Pop12_17` * (`Alc12_17` / 100)) +
+                   (`Pop18_25` * (`Alc18_25` / 100)) +
+                   (`Pop26Plus` * (`Alc26Plus` / 100)))
+
+glimpse(NSDUH)
+```
+
+### Exercise 5: Calculate Alcohol Use Rate for All Residents Over 12
+Create a new variable in NSDUH called "AlcoholRate". This variable should have the rate of alcohol consumption for all people over the year of 12 in each state. Recall that the overall rate of consumption should be the total number of people who drink alcohol divided by the total population.
+```{r}
+NSDUH <- NSDUH %>%
+  mutate(AlcoholRate = (AlcoholTotal / PopTotal) * 100)
+
+glimpse(NSDUH)
+```
+```{r, include=FALSE}
+## Data Checkpoint 2
+# If you would like to make sure you have the correct version of the dataframe from this point forward, then delete the # on the next two lines and run this code chunk.
+id <- '1BuoWWQMQRI5NZaJCfDsLn-PjvF-PINQM'
+NSDUH <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+## Modeling and Describing Data
+Now, let's find out which *regions* have the highest and lowest average rates of alcohol consumption. To do this, we can look at the average rates of alcohol consumption for all states in each of the 4 CDC regions of the US (West, Northeast, South, Midwest).
+
+### Exercise 6: Find averages per Region
+Create a new data frame called NSDUH_Regions. This data frame should have 4 rows (one for each Region). It should have 2 variables: "Region" should be the region name and "AverageAlcoholRate" should be the mean alcohol rate for all states within the particular region.
+```{r}
+NSDUH_Regions <- NSDUH %>%
+  group_by(Region) %>%
+  summarise(AverageAlcoholRate = mean(AlcoholRate, na.rm = TRUE)) %>%
+  ungroup()
+
+glimpse(NSDUH_Regions)
+```
+
+### Exercise 7: Visualize averages per Region
+Create a *bar plot* that visualizes the NSDUH_Regions data in a sensible fashion.
+```{r}
+NSDUH_Regions %>%
+  ggplot(aes(x = Region, y = AverageAlcoholRate)) +
+  geom_bar(stat = "identity", fill = "darkgreen") +
+  labs(title = "Average Alcohol Rates per Region",
+       x = "Region",
+       y = "Average Alcohol Rate")
+```
+# Additional Questions
+Excellent! Based on the graph above, you should be able to figure out which regions had the highest and lowest rates of alcohol consumption (at least in 2018)! The document from the top until this point is basically what you would expect to see in a real data analysis. For the next 3 exercises, you're going to answer a couple extra questions that are less directly tied to the original question.
+
+### Exercise 8: Find the State with the Lowest Rate of Alcohol Use
+Rearrange the NSDUH data frame so that all the states are ordered so that the state with the *lowest* overall alcohol consumption rate is at the top of the data frame and the state with the *highest* overall alcohol consumption rate is at the bottom.
+```{r}
+NSDUH <- NSDUH %>% 
+  arrange(AlcoholRate)
+
+glimpse(NSDUH)
+```
+
+# Additional Questions
+Excellent! Based on the graph above, you should be able to figure out which regions had the highest and lowest rates of alcohol consumption (at least in 2018)! The document from the top until this point is basically what you would expect to see in a real data analysis. For the next 3 exercises, you're going to answer a couple extra questions that are less directly tied to the original question.
+
+### Exercise 8: Find the State with the Lowest Rate of Alcohol Use
+Rearrange the NSDUH data frame so that all the states are ordered so that the state with the *lowest* overall alcohol consumption rate is at the top of the data frame and the state with the *highest* overall alcohol consumption rate is at the bottom.
+```{r}
+NSDUH <- NSDUH %>% 
+  arrange(AlcoholRate)
+
+glimpse(NSDUH)
+```
+
+### Exercise 9: Estimate of Total Minor Alcohol Users in all US States
+What is the best estimate you can calculate of the *total* number of 12-17 year-olds who consume alcohol in the United States (minus the territories and DC)? Use datawrangling tools to create a new data frame called TotalAlcYouth. TotalAlcYouth should have 1 row and 1 variable. That variable should be called "TotalYouthDrinkers". TotalYouthDrinkers should be an estimate of the total, combined number of youth who drink alcohol in all the states in the United States. To create this dataframe, you will need to use multiple data wrangling steps. Make sure to remove the District of Columbia from the calculation, as it is not a US State.
+```{r}
+
+TotalAlcYouth <- NSDUH %>%
+  filter(State != "District of Columbia") %>%
+  mutate(EstimatedYouthDrinkers = `Pop12_17` * (`Alc12_17` / 100)) %>%
+  summarise(TotalYouthDrinkers = sum(EstimatedYouthDrinkers)) 
+
+```
+
+### Exercise 10: Comparing Minor Alcohol and Marijuana Rates 
+Is it typical for the rate of alcohol use to be greater than the rate of marijuana use in Western states? Figure this out by creating a data frame called "RegionalDifferences". RegionalDifferences should include 4 rows and 2 variables: "Region" include the name of the 4 CDC US regions; "AverageAlcoholOverMarijuana" should list the *median* amount that the rate of youth (12-17) alcohol consumption is *greater than* the rate of youth marijuana consumption. To do this you will need to use multiple data wrangling steps. Note that to compare rates of consumption for marijuana and alcohol, you will need to subtract rates of consumption for those two drugs at some point.
+```{r}
+RegionalDifferences <- NSDUH %>%
+  mutate(AlcoholMinusMarijuana = `Alc12_17` - `Mar1_17`) %>%
+  group_by(Region) %>%
+  summarise(AverageAlcoholOverMarijuana = median(AlcoholMinusMarijuana))
+
+colnames(RegionalDifferences)[1] <- "Region"
+
+
+```
+
