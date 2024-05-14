@@ -94,12 +94,36 @@ births %>%
 
 
 ```{r}
+ # Select only character columns (assuming all other columns are numeric)
+  char_cols <- sapply(births, is.character)
+
+# Apply str_to_title() function to each character column
+  births[char_cols] <- lapply(births[char_cols], str_to_title)
+
 births %>% 
-   ggplot(aes(x = weight, fill = lowbirthweight)) +
-    geom_histogram() +
-    facet_wrap(~ gender) +
-     labs (x = "Birthweight",
-           title = "Birthweight and Recorded Gender")
+  ggplot(aes(x = weight, fill = Birthweight)) +
+  geom_histogram() +
+  facet_wrap(~ gender) +
+  labs(title = "Birthweight and recorded Gender", 
+       subtititle = paste("Source: https://docs.google.com/uc?id=%s&export=download", format(Sys.Date(), "%m%d%Y")),
+       x = "Sum of records",
+       y = "Recorded birthweight") + 
+    theme(plot.title = element_text(hjust = 0.5, size = 12), #Adjust size of titles
+          plot.subtitle = element_text(hjust = 0.5, size = 10), 
+          panel.grid.major.x = element_blank(), #Next 3 lines are getting rid of long lines, keeping horizontal
+          panel.grid.minor.x = element_blank(), 
+          panel.grid.major.y = element_line(color = "gray"),
+          axis.title.x = element_text(size = 8), #Adjust size of x-axis title
+          axis.title.y = element_text(size = 8),
+          axis.title.y.right = element_text(angle = 90), 
+          panel.background = element_blank(), #Remove panel background for visibility on presentations
+          plot.background = element_rect(color = "gray", linewidth = 1), #Add border arount chart 
+          legend.position = "bottom", #Next 4 lines detail sie and parameters of legend box 
+          legend.key.size = unit(0.3, "cm"),
+          legend.key = element_blank(),
+          legend.text = element_text(size = 8),
+          axis.text.x = element_text(size = 8)) #+
+  #scale_fill_manual(values = group.colors, name = "") + #Name = "" gets rid of the unwanted definition of the scale fill 
 
 #Does the typical birthweight for male newborns or female newborns seem higher in this dataset? Does the difference seem large or small? How can you tell from the graph (write 2-3 sentences)?
 
