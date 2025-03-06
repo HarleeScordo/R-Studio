@@ -1,0 +1,101 @@
+library(arrow)
+library(dplyr)
+library(data.table)
+
+# Paths to the parquet files
+#ile1 <- "C:/Users/hrlsw/OneDrive/Documents/Sample Sets/car_sales_data_sample(1).csv"
+#ile2 <- "C:/Users/hrlsw/OneDrive/Documents/Sample Sets/car_sales_data_sample.csv"
+
+# Open the parquet files as Arrow datasets (streaming read)
+# ds1 <- open_dataset(file1, format = "parquet")
+# ds2 <- open_dataset(file2, format = "parquet")
+
+
+
+# 
+# df1 <- clean_names(df1)
+# df2 <- clean_names(df2)
+
+library(data.table)
+
+df1 <- fread("C:/Users/hrlsw/OneDrive/Documents/Sample_Sets/car_sales_data_sample_one.csv")
+df2 <- fread("C:/Users/hrlsw/OneDrive/Documents/Sample_Sets/car_sales_data_sample.csv")
+
+# Ensure column order matches
+setcolorder(df2, colnames(df1))
+
+# Row differences (works directly in data.table)
+row_diffs <- rbind(
+  fsetdiff(df1, df2, all = TRUE),
+  fsetdiff(df2, df1, all = TRUE)
+)
+
+if (nrow(row_diffs) > 0) {
+  fwrite(row_diffs, "row_differences.csv")
+  print("Row-wise differences saved to 'row_differences.csv'")
+} else {
+  print("No row-wise differences found")
+}
+
+
+
+# Ensure columns are in the same order (optional if files already match exactly)
+# df2 <- df2[, colnames(df1), drop = FALSE]
+# 
+# # Check if data is identical
+# if (identical(df1, df2)) {
+#   print("Files are identical")
+# } else {
+#   print("Files have differences")
+#   
+#   # --- 1. Row-wise differences ---
+#   row_diffs <- anti_join(df1, df2, by = colnames(df1)) %>%
+#     bind_rows(anti_join(df2, df1, by = colnames(df2)))
+#   
+#   if (nrow(row_diffs) > 0) {
+#     print("Row-wise differences found (saved to row_differences.csv)")
+#     write.csv(row_diffs, "row_differences.csv", row.names = FALSE)
+#   } else {
+#     print("No row-wise differences found")
+#   }
+  
+  # --- 2. Cell-level differences ---
+  compare_values <- function(col1, col2) {
+    if (is.numeric(col1) && is.numeric(col2)) {
+      return(col1 != col2 & !(is.na(col1) & is.na(col2)))
+    } else {
+      return(as.character(col1) != as.character(col2))
+    }
+  }
+  
+  # Collect cell-by-cell differences into a long-format data frame
+  cell_diffs <- list()
+  
+  for (col in colnames(df1)) {
+    diffs_in_col <- which(compare_values(df1[[col]], df2[[col]]))
+    
+    if (length(diffs_in_col) > 0) {
+      cell_diffs[[col]] <- data.frame(
+        RowNumber = diffs_in_col,
+        ColumnName = col,
+        File1Value = df1[[col]][diffs_in_col],
+        File2Value = df2[[col]][diffs_in_col],
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+  
+  if (length(cell_diffs) > 0) {
+    all_cell_diffs <- do.call(rbind, cell_diffs)
+    write.csv(all_cell_diffs, "cell_level_differences.csv", row.names = FALSE)
+    print("Cell-level differences saved to cell_level_differences.csv")
+  } else {
+    print("No cell-level differences found, but row order or structure may differ")
+  }
+  
+  # --- 3. Visual diff report (daff) ---
+  diff_report <- daff::diff_data(df1, df2)
+  html_file <- "diff_report.html"
+  writeLines(daff::render_diff(diff_report), html_file)
+  browseURL(html_file)
+}
